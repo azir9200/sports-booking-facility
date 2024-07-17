@@ -1,0 +1,80 @@
+1.   export interface StudentModel extends Model<TStudent> {
+  isUserExists(id: string): Promise<TStudent | null>;
+}
+
+// export type StudentMethods = {
+//   isUserExists(id: string): Promise<TStudent | null >;
+// };
+// export type StudentModel = Model<TStudent, Record<string, never>, StudentMethods>;
+
+
+2.
+ 
+// virtual
+studentSchema.virtual('fullName').get(function () {
+  return this.name.firstName + this.name.middleName + this.name.lastName;
+});
+
+studentSchema.pre('save', async function (next) {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const user = this;
+  user.password = await bcrypt.hash(
+    user.password,
+    Number(config.bcrypt_salt_round),
+  );
+  next();
+});
+
+studentSchema.post('save', function (doc, next) {
+  doc.password = '';
+  next();
+});
+
+//query Middleware
+studentSchema.pre('find', function (next) {
+  console.log('find operation');
+  this.find({ isDeleted: { $ne: true } });
+  next();
+});
+
+studentSchema.post('findOne', function (next) {
+  this.findOne({ isDeleted: { $ne: true } });
+  next();
+});
+
+studentSchema.pre('aggregate', function (next) {
+  // console.log(this.pipeline());
+  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
+  next();
+});
+
+studentSchema.statics.isUserExists = async function (id: string) {
+  const existingUser = await Student.findOne({ id });
+
+  return existingUser;
+};
+
+// studentSchema.methods.isUserExists = async function(id: string){
+//   const existingUser = await Student.findOne({id});
+//   return existingUser;
+// }
+
+export const Student = model<TStudent, StudentModel>('Student', studentSchema);
+
+
+
+3
+
+
+// const createStudentIntoDB = async (studentData: TStudent) => {
+//   // if (await Student.isUserExists(studentData.id)) {
+//   //   throw new Error('Instance Method:  User already exists ! ');
+//   // }
+//   const result = await Student.create(studentData);
+
+//   // const student = new Student(studentData);    //static Method
+//   // if(await student.isUserExists(studentData.id)){
+//   //   throw new Error('oi, User Already Exists !')  }
+//   // const result = await student.save();
+//   return result;
+// };
