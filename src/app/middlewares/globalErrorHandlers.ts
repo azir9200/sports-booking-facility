@@ -4,7 +4,10 @@ import { ZodError } from 'zod';
 import handleZodError from '../error/handleZodError';
 import config from '../config';
 import handleValidationError from '../error/handleValidationError';
+import handleCastError from '../error/handleCastError';
+import handleDuplicateError from '../error/handleDuplicateError';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'what is wrong!';
@@ -15,10 +18,6 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     },
   ];
 
-  // if (err instanceof ZodError){
-  //   statusCode: 300;
-  //   message = 'amii zod error',
-  // }
   if (err instanceof ZodError) {
     const simplifiedError = handleZodError(err);
     statusCode = simplifiedError?.statusCode;
@@ -29,15 +28,23 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     statusCode = simplifiedError?.statusCode;
     message = simplifiedError?.message;
     errorSources = simplifiedError?.errorSources;
-  } else if (err?.name === 'AppError') {
-    console.log('ami  APP error');
+  } else if (err?.name === 'CastError') {
+    const simplifiedError = handleCastError(err);
+    statusCode = simplifiedError?.statusCode;
+    message = simplifiedError.message;
+    errorSources = simplifiedError.errorSources;
+  }else if (err?.name === 'DuplicateError') {
+    const simplifiedError = handleDuplicateError(err);
+    statusCode = simplifiedError?.statusCode;
+    message = simplifiedError.message;
+    errorSources = simplifiedError.errorSources;
   }
 
   return res.status(statusCode).json({
     success: false,
     message,
     errorSources,
-    amiError: err,
+    err,
     stack: config.node_env === 'development' ? err?.stack : null,
   });
 };

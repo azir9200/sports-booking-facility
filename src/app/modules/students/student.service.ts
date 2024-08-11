@@ -1,47 +1,83 @@
+import { TStudent } from './student.interface';
 import { Student } from './student.model';
 
+const getAllStudentFromDB = async (query: Record<string, unknown>) => {
+  console.log('base query', query);
+  const queryObj = { ...query };
+  const studentSearchFields = ['email', 'name.firstName'];
+  let searchTerm = '';
 
-// const createStudentIntoDB = async (student: TStudent) => {
-//   const result = await Student.create(student);
-//   return result;
-// };
+  if (query?.searchTerm) {
+    searchTerm = query?.searchTerm as string;
+  }
 
-// const createStudentIntoDB = async (studentData: TStudent) => {
-//   // if (await Student.isUserExists(studentData.id)) {
-//   //   throw new Error('Instance Method:  User already exists ! ');
-//   // }
-//   const result = await Student.create(studentData);
+  const searchQuery = Student.find({
+    $or: studentSearchFields.map((field) => ({
+      [field]: { $regex: searchTerm, $options: 'i' },
+    })),
+  });
 
-//   // const student = new Student(studentData);    //static Method
-//   // if(await student.isUserExists(studentData.id)){
-//   //   throw new Error('oi, User Already Exists !')  }
-//   // const result = await student.save();
-//   return result;
-// };
+  const excludeFields = ['searchTerm'];
+  excludeFields.forEach((el) => delete queryObj[el]);
+  console.log({ query, queryObj });
 
-const getAllStudentFromDB = async () => {
-  const result = await Student.find();
+  const result = await searchQuery.find(queryObj);
   return result;
 };
 
-// const getSingleStudentFromDB = async (id: string) => {
-//   const result = await Student.aggregate([{ $match: { id: id } }]);
-//   // const result = await Student.findOne({ id });
-//   return result;
-// };
 
 const getSingleStudentFromDB = async (id: string) => {
-  const result = await Student.aggregate([{ $match: { id: id } }]);
+  const result = await Student.findById({ id })
+    .populate('admissionSemester')
+    .populate({
+      path: 'academicDepartment',
+      populate: {
+        path: 'academicFaculty',
+      },
+    });
+  //const result = await Student.aggregate([{ $match: { id: id } }]);
   return result;
 };
+
 const deleteStudentFromDB = async (id: string) => {
   const result = await Student.updateOne({ id }, { isDeleted: true });
   return result;
 };
 
+const updateStudentIntoDB = async (id: string, payload: Partial<TStudent>) => {
+  const { name, guardian, localGuardian, ...remainingData } = payload;
+  const modifyData: Record<string, unknown> = {
+    ...remainingData,
+  };
+
+  if (name && Object.keys(name).length) {
+    for (const [key, value] of Object.entries(name)) {
+      modifyData[`name${key}`] = value;
+    }
+  }
+
+  if (guardian && Object.keys(guardian).length) {
+    for (const [key, value] of Object.entries(guardian)) {
+      modifyData[`guardian${key}`] = value;
+    }
+  }
+  if (localGuardian && Object.keys(localGuardian).length) {
+    for (const [key, value] of Object.entries(localGuardian)) {
+      modifyData[`localGuardian${key}`] = value;
+    }
+  }
+
+  console.log(modifyData);
+  const result = await Student.findOneAndUpdate({ _id: id }, modifyData, {
+    new: true,
+    runValidators: true,
+  });
+  return result;
+};
+
 export const StudentServices = {
-  // createStudentIntoDB,
   getAllStudentFromDB,
   getSingleStudentFromDB,
   deleteStudentFromDB,
+  updateStudentIntoDB,
 };

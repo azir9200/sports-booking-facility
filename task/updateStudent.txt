@@ -1,0 +1,23 @@
+1#router.patch(
+  '/:studentId',
+  validateRequest(studentValidation.updateStudentValidationSchema),
+  StudentController.updateStudent,
+);
+
+2#const updateStudent = catchAsync(async (req, res) => {
+  const { studentId } = req.params;
+  const { student } = req.body;
+  const result = await StudentServices.updateStudentIntoDB(studentId, student);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Student is updated successfully',
+    data: result,
+  });
+});
+
+3# const updateStudentIntoDB = async (id: string, payload: Partial<TStudent>) => {
+  const result = await Student.findOneAndUpdate({ _id: id }, payload);
+  return result;
+};
