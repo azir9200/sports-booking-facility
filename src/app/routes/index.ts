@@ -4,8 +4,9 @@ import { StudentRoute } from '../modules/students/student.route';
 import { AcademicSemesterRoutes } from '../modules/academicSemester/academicSemester.route';
 import { AcademicFacultyRoutes } from '../modules/academicFaculty/academicFaculty.route';
 import { AcademicDepartmentRoutes } from '../modules/academicDepartment/academicDepartment.route';
-import { SemesterRegistrationController } from '../modules/semesterRegistration/semesterRegistration.controller';
 import { semesterRegistrationRoutes } from '../modules/semesterRegistration/semesterRegistration.route';
+import { offeredCourseRoutes } from '../modules/OfferedCourse/OfferedCourse.route';
+import { CourseRoutes } from '../modules/course/course.route';
 
 const router = Router();
 
@@ -37,11 +38,18 @@ const moduleRoutes = [
     route: AcademicDepartmentRoutes,
   },
   {
+    path: '/courses',
+    route: CourseRoutes,
+  },
+  {
     path: '/semester-registration',
     route: semesterRegistrationRoutes,
-  }, 
+  },
+  {
+    path: '/offered-courses',
+    route: offeredCourseRoutes,
+  },
 ];
-
 
 // moduleRoutes.forEach((route) => router.use(route.path, route.route));
 
